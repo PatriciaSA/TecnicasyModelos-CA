@@ -4,22 +4,23 @@ author: "Driselda"
 date: "22/1/2022"
 output: pdf_document
 ---
+Carga las paqueterías a utilizar
+igraph,tidyverse,tidygraph,visNetwork,networkD3,RColorBrewer,ggraph
 
 ```{r}
-library(pacman)
-p_load(igraph,tidyverse,tidygraph,visNetwork,networkD3,RColorBrewer,ggraph)
+
+
 ```
 
 Buscar que es igraph y como usarlo
 ```{r}
-?igraph
+
 ```
 
 Ejemplo sencillito
+Llama al entorno el csv que se llama prueba_redes y graficalo
 ```{r}
-prueba_redes<-read_csv("prueba_redes.csv", col_names=FALSE)
-g<-graph.data.frame(prueba_redes,directed = F)
-plot(g)
+
 ```
 
 
@@ -48,13 +49,11 @@ dolphins=read_graph(file.choose(),format = "gml")
 
 Observar la gráfica no direccionada, no ponderada
 ```{r}
-plot(dolphins, vertex.size=5, vertex.label.cex=.5)
+
 ```
 
 
-```{r}
-?igraph.plotting
-```
+
 
 Colores
 ```{r}
@@ -118,25 +117,24 @@ Ejemplo 2
 
 
 
-Llamar el archivo al entorno
+Llamar el archivo Lista_nodosQro2.csv al entorno
 ```{r}
-Qro<-read.csv("Lista_nodosQro2.csv")
+
 
 #Quitar los NA's
-Qro<-na.omit(Qro)
+
 ```
-Hacer una tabla de frecuencias
+Hacer una tabla de frecuencias que se llame frecuencias.Qro
 ```{r}
-frecuencias.Qro<-table(Qro$To,Qro$From)
-#View(frecuencias.Qro)
+
 ```
 
 Guardar como data frame
 ```{r}
-frecuencias.Qro<-as.data.frame(frecuencias.Qro)
+
 #Quitar los que tengan frecuencia de 0, en otras palabras sólo dejar aquellas cuya frecuencia sea mayor a cero
 
-frecuencias.Qro<-filter(frecuencias.Qro,Freq > 0)
+
 ```
 
 
