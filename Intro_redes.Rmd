@@ -5,21 +5,20 @@ date: "22/1/2022"
 output: pdf_document
 ---
 
+Llama los paquetes al entorno igraph,tidyverse,tidygraph,visNetwork,networkD3,RColorBrewer,ggraph
 ```{r}
-library(pacman)
-p_load(igraph,tidyverse,tidygraph,visNetwork,networkD3,RColorBrewer,ggraph)
+
 ```
 
 Buscar que es igraph y como usarlo
 ```{r}
-?igraph
+
 ```
 
-Ejemplo sencillito
+Ejemplo sencillito.
+Llama el archivo prueba_redes.csv al entorno y graficalo
 ```{r}
-prueba_redes<-read_csv("prueba_redes.csv", col_names=FALSE)
-g<-graph.data.frame(prueba_redes,directed = F)
-plot(g)
+
 ```
 
 
@@ -181,10 +180,30 @@ edges <- select(edges, from, to, weigth)
 Graficar
 
 ```{r}
+routes_igraph <- graph_from_data_frame(d = edges,
+                                       vertices = nodes,
+                                       directed = FALSE)
 plot(routes_igraph, layout = layout_with_graphopt, edge.arrow.size = 0.2)
 FloColors <- c(brewer.pal(2,'RdYlBu'),brewer.pal(2,'RdYlBu'))
-plot(routes_igraph,layout=layout_with_graphopt, vertex.color=FloColors,vertex.radius=1.5, edge.lwd=.8)
+plot(routes_igraph,layout=layout_with_graphopt, vertex.color=FloColors,vertex.radius=1.5, edge.lwd=.8,vertex.label = V(routes_igraph)$nodo)
 ```
+Comunidades
+```{r}
+# Detectar comunidades con Louvain
+comunidades <- cluster_louvain(routes_igraph)
+
+# Agregar la comunidad detectada a los nodos
+nodes$comunidad <- membership(comunidades)
+
+#Visualizar las comunidades
+plot(comunidades, routes_igraph, 
+     vertex.size = 10, 
+     vertex.label = V(routes_igraph)$nodo,  # Agregar etiquetas con los nombres de los nodos
+     vertex.label.cex = 0.8, 
+     main = "Comunidades detectadas con Louvain")
+
+```
+
 
 
 ```{r}
@@ -238,28 +257,10 @@ forceNetwork(Links = edges_d3, Nodes = nodes_d3, Source = "from", Target = "to",
 
 
 ```
+
+
 ```{r}
 sankeyNetwork(Links = edges_d3, Nodes = nodes_d3, Source = "from", Target = "to", 
               NodeID = "nodo", Value = "weigth", fontSize = 5, unit = "Menciones")
 
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
