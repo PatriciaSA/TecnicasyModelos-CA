@@ -1,0 +1,265 @@
+---
+title: "network analysis basics"
+author: "Driselda"
+date: "22/1/2022"
+output: pdf_document
+---
+
+```{r}
+library(pacman)
+p_load(igraph,tidyverse,tidygraph,visNetwork,networkD3,RColorBrewer,ggraph)
+```
+
+Buscar que es igraph y como usarlo
+```{r}
+?igraph
+```
+
+Ejemplo sencillito
+```{r}
+prueba_redes<-read_csv("prueba_redes.csv", col_names=FALSE)
+g<-graph.data.frame(prueba_redes,directed = F)
+plot(g)
+```
+
+
+```{r}
+#tree
+treegraph = make_tree(30,5,"undirected") #numero de vertices, segundo grado de vertices, undirected visualiza líneas; directed visualiza flechas
+plot(treegraph, vertex.size=3,vertex.label=NA) #Vertex.size tamaño del vertice
+
+stargraph = make_star(30,"undirected",center =5) #Cual de los nodos es el centro? el 5
+plot(stargraph,vertex.size=3,vertex.label=NA)
+
+ringgraph = make_ring(n = 30,directed = FALSE,circular = TRUE)
+plot(ringgraph)
+
+latticegraph = make_lattice(length = 30, dim =2) #el tamaño del lattice en cada dimensión
+plot(latticegraph,vertex.size=3,vertex.label=NA)
+```
+
+Aqui hay gráficos de redes  previamente realizadas en otras investigaciones y compartidas de forma abierta
+www-personal.umich.edu/~mejn/netdata/
+
+Leer el archivo
+```{r}
+dolphins=read_graph(file.choose(),format = "gml")
+```
+
+Observar la gráfica no direccionada, no ponderada
+```{r}
+plot(dolphins, vertex.size=5, vertex.label.cex=.5)
+```
+
+
+```{r}
+?igraph.plotting
+```
+
+Colores
+```{r}
+library(RColorBrewer)
+display.brewer.all()
+display.brewer.pal(5,"PRGn")
+Colores.Purple<-brewer.pal(5,"PRGn")
+```
+
+Modificar la gráfica
+
+```{r}
+plot(g ,
+     vertex.color = Colores.Purple, # cambia el color de los nodos
+     vertex.label.color = "black", # cambia el color de las etiquetas
+     vertex.label.cex = .75, # cambia el tamaño de las etiquetas al 75% del tamaño original
+     edge.curved=.25, # agrega una curva del 25% a los edges
+     edge.color="grey20", # cambia el color del edge
+     edge.arrow.size = 0.2) #Cambia el grosor de la flecha
+```
+
+
+
+```{r}
+plot(dolphins,
+     vertex.color = Colores.Purple, # cambia el color de los nodos
+     vertex.label.color = "black", # cambia el color de las etiquetas
+     vertex.label.cex = .75, # cambia el tamaño de las etiquetas al 75% del tamaño original
+     edge.curved=.25, # agrega una curva del 25% a los edges
+     edge.color="grey20", # cambia el color del edge
+     edge.arrow.size = 0.2) #Cambia el grosor de la flecha
+```
+
+```{r}
+#Cambiar el tamaño de los nodos y las etiquetas de los nodos de tal forma que se vinculen con su importancia.
+V(dolphins)$dolphins <- strength(dolphins)
+par(mar=c(0,0,0,0)); plot(dolphins,edge.arrow.size = 0.2) 
+#en par()  (abajo, izquierda, arriba, derecha)
+
+```
+
+Convertirlos a log para mejorar su visualización
+
+```{r}
+V(dolphins)$size <- log(strength(dolphins)) *4+3
+par(mar=c(0,0,0,0)); plot(dolphins,edge.arrow.size = 0.2,vertex.color="grey",edge.color="grey20",vertex.label.cex = .75)
+#La función par seguida por mar establece los márgenes en pulgadas en este orden:
+#bottom, left, top, rigth
+```
+
+```{r}
+d<-degree(dolphins,mode="total")
+max(d)
+min(d)
+mean(d)
+b<-betweenness(dolphins)
+max(b)
+```
+
+Ejemplo 2
+
+
+
+Llamar el archivo al entorno
+```{r}
+Qro<-read.csv("Lista_nodosQro2.csv")
+
+#Quitar los NA's
+Qro<-na.omit(Qro)
+```
+Hacer una tabla de frecuencias
+```{r}
+frecuencias.Qro<-table(Qro$To,Qro$From)
+#View(frecuencias.Qro)
+```
+
+Guardar como data frame
+```{r}
+frecuencias.Qro<-as.data.frame(frecuencias.Qro)
+#Quitar los que tengan frecuencia de 0, en otras palabras sólo dejar aquellas cuya frecuencia sea mayor a cero
+
+frecuencias.Qro<-filter(frecuencias.Qro,Freq > 0)
+```
+
+
+Agregar un ID
+```{r}
+nodos1<-as.data.frame(levels(frecuencias.Qro$Var1))
+colnames(nodos1)[1]<-"nodo"
+nodos2<-as.data.frame(levels(frecuencias.Qro$Var2))
+colnames(nodos2)[1]<-"nodo"
+#Pegar nodos1 con nodos 2
+df_list <- list(nodos1,nodos2)
+df_list<-df_list %>% reduce(full_join, by='nodo')
+
+#Quitar duplicados
+nodes<-df_list %>% 
+  distinct(nodo, .keep_all=TRUE)
+
+
+#Agregar el ID y la ciudad
+nodes <- nodes %>% rowid_to_column("id")
+nodes ["Ciudad"] <-"Querétaro"
+
+```
+
+```{r}
+edges <- frecuencias.Qro %>% 
+  left_join(nodes, by = c("Var1" = "nodo")) 
+colnames(edges)[4]<-"from"
+edges <- edges %>% 
+  left_join(nodes, by = c("Var2" = "nodo"))
+edges$Ciudad.x<-NULL
+colnames(edges)[5]<-"to"
+colnames(edges)[3]<-"weigth"
+
+```
+
+```{r}
+#Eliminamos los nombres y sólo dejamos los números
+edges <- select(edges, from, to, weigth)
+
+```
+Graficar
+
+```{r}
+plot(routes_igraph, layout = layout_with_graphopt, edge.arrow.size = 0.2)
+FloColors <- c(brewer.pal(2,'RdYlBu'),brewer.pal(2,'RdYlBu'))
+plot(routes_igraph,layout=layout_with_graphopt, vertex.color=FloColors,vertex.radius=1.5, edge.lwd=.8)
+```
+
+
+```{r}
+routes_tidy <- tbl_graph(nodes = nodes, edges = edges, directed = TRUE)
+routes_igraph_tidy <- as_tbl_graph(routes_igraph)
+routes_tidy
+routes_igraph_tidy
+routes_tidy %>% 
+  activate(edges) %>% 
+  arrange(desc(weigth))
+
+```
+Graficar
+
+Gráfica 1
+```{r}
+ggraph(routes_tidy, layout = "graphopt") + 
+  geom_node_point() +
+  geom_edge_link(aes(width = weigth), alpha = 0.9) + 
+  scale_edge_width(range = c(0.2, 2)) +
+  geom_node_text(aes(label = nodo), repel = TRUE) +
+  labs(edge_width = "Representación de Querétaro") +
+  theme_graph()
+
+```
+Gráfica 2
+```{r}
+ggraph(routes_igraph, layout = "linear") + 
+  geom_edge_arc(aes(width = weigth), alpha = 0.8) + 
+  scale_edge_width(range = c(0.2, 1)) +
+  geom_node_text(aes(label = nodo)) +
+  labs(edge_width = "Querétaro") +
+  theme_graph()
+```
+En 3D
+```{r}
+visNetwork(nodes, edges)
+edges <- mutate(edges, width = weigth/5 + 1)
+visNetwork(nodes, edges) %>% 
+  visIgraphLayout(layout = "layout_with_fr") %>% 
+  visEdges(arrows = "middle")
+```
+
+En 3D-2
+```{r}
+nodes_d3 <- mutate(nodes, id = id - 1)
+edges_d3 <- mutate(edges, from = from - 1, to = to - 1)
+forceNetwork(Links = edges_d3, Nodes = nodes_d3, Source = "from", Target = "to", 
+             NodeID = "nodo", Group = "id", Value = "weigth", 
+             opacity = 1, fontSize = 16, zoom = TRUE)
+
+
+```
+```{r}
+sankeyNetwork(Links = edges_d3, Nodes = nodes_d3, Source = "from", Target = "to", 
+              NodeID = "nodo", Value = "weigth", fontSize = 5, unit = "Menciones")
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
